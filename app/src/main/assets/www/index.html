@@ -1,0 +1,39 @@
+<!doctype html><html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>PERSONAL OS</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:#000;color:#d7d7d7;font-family:Arial,sans-serif}
+body{text-transform:uppercase}.app{min-height:100%;background:#000}.head{display:flex;justify-content:space-between;padding:20px 22px 8px}
+h1{margin:0;font:italic 900 54px/1 Georgia,serif;color:#eee;text-shadow:4px 4px #000}.hud{text-align:right;color:#5a748c;font-weight:bold}
+.hp{margin-top:8px;width:140px;height:14px;border:2px solid #333;padding:2px}.hp i{display:block;height:100%;background:#990000}
+.wrap{display:flex;gap:18px;padding:12px 22px}.nav{width:145px;flex:none}.nav button{display:block;width:100%;background:none;border:0;color:#526779;text-align:left;font-weight:900;padding:10px 0;font-size:15px}.nav button.active{color:#fff}
+main{flex:1;min-width:0}.panel{border:2px solid #333;padding:15px;margin-bottom:15px}.panel h2{margin:0 0 12px;color:#5a748c;font-size:18px;border-bottom:2px solid #222;padding-bottom:7px}
+.form{display:flex;gap:7px}.form input,.form select,.journal{background:#111;border:2px solid #444;color:#fff;padding:11px}.form input{flex:1;min-width:0}.form button{background:#5a748c;border:0;padding:0 14px;font-weight:900}
+.item{display:flex;justify-content:space-between;padding:10px;background:#0b0b0b;border:1px solid #222;margin:6px 0}.del{background:none;border:0;color:#c44}
+.stat{display:flex;justify-content:space-between;border-bottom:2px solid #222;padding:12px 0}.stat b{font-size:28px;color:#fff}.health{text-align:center;background:#120000;border:2px solid #660000;padding:15px}.num{font-size:45px;color:#fff}.health button,.actions button,.tools button{background:#111;color:#ddd;border:1px solid #444;padding:9px;margin:4px}
+.journal{min-height:300px;text-transform:none;width:100%}.tools{margin-bottom:8px}.note{font-size:10px;color:#777;line-height:1.5;margin-top:8px}
+@media(max-width:650px){h1{font-size:42px}.wrap{padding:10px 14px;gap:10px}.nav{width:100px}.nav button{font-size:12px}.head{padding:15px}.hp{width:105px}}
+</style></head><body><div class="app">
+<div class="head"><h1>PERSONAL OS</h1><div class="hud">RESPECT <b id="respect">0</b><div class="hp"><i id="bar"></i></div></div></div>
+<div class="wrap"><nav class="nav">
+<button class="active" data-tab="inv">▶ INVENTORY</button><button data-tab="stats">▶ OPTIONS</button><button data-tab="exp">▶ EXPERIMENTS</button>
+</nav><main>
+<section id="inv"><div class="panel"><h2>ADD ITEM</h2><div class="form"><select id="kind"><option value="crusk">CRUSK</option><option value="raw">RAW</option></select><input id="item" placeholder="ITEM NAME"><button onclick="add()">ADD</button></div></div>
+<div class="panel"><h2>CRUSK</h2><div id="crusk"></div></div><div class="panel"><h2>RAW</h2><div id="raw"></div></div></section>
+<section id="stats" hidden><div class="panel"><h2>STATUS</h2><div class="stat">RESPECT <b id="r2">0</b></div><div class="stat">LEVEL <b id="level">1</b></div></div><div class="health"><h2>HEALTH</h2><div class="num"><span id="hp">100</span> / <span id="max">100</span></div><button onclick="hp(-10)">-10 HP</button><button onclick="hp(10)">+10 HP</button><button onclick="mx(10)">+10 MAX</button></div></section>
+<section id="exp" hidden><div class="panel"><h2>RESEARCH JOURNAL</h2><div class="tools"><button onclick="document.execCommand('bold')"><b>B</b></button><button onclick="document.execCommand('italic')"><i>I</i></button><button onclick="document.execCommand('underline')"><u>U</u></button></div><div id="journal" class="journal" contenteditable="true"></div>
+<div class="actions"><button onclick="backup()">EXPORT BACKUP</button><button onclick="document.getElementById('file').click()">IMPORT BACKUP</button><button onclick="wipe()">ERASE DATA</button></div><input id="file" type="file" hidden accept=".json" onchange="restore(this.files[0])"><div class="note">LOCAL ONLY. NO FIREBASE. NO ACCOUNT. EXPORT A BACKUP BEFORE UNINSTALLING OR CLEARING APP DATA.</div></div></section>
+</main></div></div>
+<script>
+const K='personal-os-local-v1';let d=load();function fresh(){return{stats:{respect:0,hp:100,max:100},inv:{crusk:[],raw:[]},journal:''}}
+function load(){try{return Object.assign(fresh(),JSON.parse(localStorage.getItem(K)||'{}'))}catch(e){return fresh()}}
+function save(){localStorage.setItem(K,JSON.stringify(d))}
+function esc(x){return String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function render(){r('respect',d.stats.respect);r('r2',d.stats.respect);r('level',Math.max(1,Math.floor(d.stats.respect/100)+1));r('hp',d.stats.hp);r('max',d.stats.max);document.getElementById('bar').style.width=Math.max(0,Math.min(100,d.stats.hp/d.stats.max*100))+'%';['crusk','raw'].forEach(k=>document.getElementById(k).innerHTML=d.inv[k].map((x,i)=>'<div class="item">'+esc(x)+'<button class="del" onclick="del(\''+k+'\','+i+')">DELETE</button></div>').join('')||'<span style="color:#555">EMPTY</span>');document.getElementById('journal').innerHTML=d.journal||''}
+function r(id,v){document.getElementById(id).textContent=v}function add(){let k=kind.value,v=item.value.trim();if(!v)return;d.inv[k].push(v);item.value='';save();render()}function del(k,i){d.inv[k].splice(i,1);save();render()}function hp(n){d.stats.hp=Math.max(0,Math.min(d.stats.max,d.stats.hp+n));save();render()}function mx(n){d.stats.max+=n;d.stats.hp=Math.min(d.stats.hp,d.stats.max);save();render()}
+function backup(){d.journal=journal.innerHTML;save();let a=document.createElement('a'),b=new Blob([JSON.stringify({app:'PERSONAL OS',data:d},null,2)],{type:'application/json'});a.href=URL.createObjectURL(b);a.download='personal-os-backup.json';a.click()}
+function restore(f){if(!f)return;let q=new FileReader();q.onload=()=>{try{d=Object.assign(fresh(),JSON.parse(q.result).data||JSON.parse(q.result));save();render();alert('BACKUP RESTORED')}catch(e){alert('INVALID BACKUP')}};q.readAsText(f)}
+function wipe(){if(confirm('ERASE ALL LOCAL DATA?')){localStorage.removeItem(K);d=fresh();render()}}
+journal.addEventListener('input',()=>{d.journal=journal.innerHTML;save()})
+document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('main>section').forEach(s=>s.hidden=true);document.getElementById(b.dataset.tab).hidden=false;document.querySelectorAll('[data-tab]').forEach(x=>x.classList.remove('active'));b.classList.add('active')});render()
+</script></body></html>
